@@ -25,7 +25,7 @@ def read_syntax_tree(lines):
                 cells = l.split('\t')
                 
                 # skip inferred words not part of the original sentence
-                if '.1' in str(cells[0]):
+                if '.1' in cells[0]:
                     continue
                     
                 sentence.append(cells[1])

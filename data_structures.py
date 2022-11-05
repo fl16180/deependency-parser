@@ -3,7 +3,7 @@ import numpy as np
 
 class TwoStack:
     def __init__(self):
-        self.stack = ['root']
+        self.stack = []
         
     def add(self, x):
         self.stack.append(x)
@@ -31,13 +31,24 @@ class TwoStack:
     def __bool__(self):
         return len(self.stack) > 0
 
+    def __len__(self):
+        return len(self.stack)
+    
+    def __str__(self):
+        return self.stack.__str__()
+
 
 class RelationGraph:
-    def __init__(self, sentence, head, deprel):
-        self.sentence = sentence
-        self.head = head
-        self.deprel = deprel
+    def __init__(self, n):
+        self.mat = np.zeros((n + 1, n + 1))
+        self.dep_to_idx = {}
+        self.idx_to_dep = {}
+        self.true_graph = False
         
+    def set_true_labels(self, head, deprel):
+        # this is temorary: eventually have a universal lookup
+        # from training set for consistency
+
         # lookup for deprel entry to matrix value
         self.dep_to_idx = {
             dep: i for i, dep in enumerate(set(deprel))
@@ -47,10 +58,16 @@ class RelationGraph:
             v: k for k, v in self.dep_to_idx.items()
         }
 
-        n = len(sentence)
-        self.mat = np.zeros((n + 1, n + 1))        # 0th entry is root
         for child, parent in enumerate(head):
-            self.mat[parent, child + 1] = self.dep_to_idx[deprel[child]]     
+            # self.mat[parent, child + 1] = self.dep_to_idx[deprel[child]]
+            self.mat[parent, child + 1] = 1
+            
+        self.true_graph = True
+    
+    def add_relation(self, from_idx, to_idx, deprel=1):
+        if self.true_graph:
+            raise Exception('Cannot modify true labeled graph')
+        self.mat[from_idx, to_idx] = deprel
     
     def contains(self, from_idx, to_idx):
         return self.mat[from_idx, to_idx] > 0
@@ -61,11 +78,9 @@ class RelationGraph:
     def get_parent(self, idx):
         return np.where(self.mat[:, idx] > 0)[0][0]
     
-    def get_word(self, idx):
-        return self.sentence[idx]
-    
-
-
-# stack = TwoStack()
-# word_list = df.iloc[0]['sentence']
-# graph = RelationGraph(df.iloc[0]['sentence'], df.iloc[0]['head'], df.iloc[0]['deprel'])
+    def __str__(self):
+        out = '{'
+        for a, b in zip(*np.where(self.mat > 0)):
+            out += f'{a}->{b},'
+        out += '}'
+        return out
