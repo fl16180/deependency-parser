@@ -3,6 +3,7 @@ import copy
 
 from data_structures import *
 
+
 def word_map(sentence):
     idx_to_word = {0: 'root'}
     for i, word in enumerate(sentence):
@@ -16,9 +17,8 @@ def view_states(sentence, states, targets):
         stack, buffer, graph = state
         stack_str = [idx_to_word[x] for x in stack.stack]
         buffer_str = [idx_to_word[x] for x in buffer]
-        
         print(stack_str, buffer_str, target)
-
+    return
 
 
 def unravel_sentence(sentence, head, deprel):
@@ -30,8 +30,6 @@ def unravel_sentence(sentence, head, deprel):
     word_list = [x + 1 for x in range(len(sentence))]
     graph = RelationGraph(len(sentence))
 
-    idx_to_word = word_map(sentence)
-
     train_states = []
     train_targets = []
 
@@ -40,8 +38,6 @@ def unravel_sentence(sentence, head, deprel):
 
     while stack:
         state = (copy.deepcopy(stack), copy.copy(word_list), copy.deepcopy(graph))
-
-        print(stack, word_list, graph)
 
         if len(stack) == 1:
             if len(word_list) > 0:
@@ -69,3 +65,5 @@ def unravel_sentence(sentence, head, deprel):
 
         train_states.append(state)
         train_targets.append(target)
+
+    return train_states, train_targets
