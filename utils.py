@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 import copy
 
 from data_structures import *
@@ -21,13 +22,60 @@ def view_states(sentence, states, targets):
     return
 
 
-def unravel_sentence(sentence, head, deprel):
+def read_syntax_tree(lines):
+    sentences = []
+    poses = []
+    heads = []
+    deprels = []
+    
+    count_word = False
+    for l in lines:
+        if l[:6] == '# text':
+            count_word = True
+            sentence = []
+            pos = []
+            head = []
+            deprel = []
+        elif count_word:
+            if l[0] != '\n':
+                cells = l.split('\t')
+                
+                # skip inferred words not part of the original sentence
+                if '.1' in cells[0]:
+                    continue
+                if '-' in cells[0]:
+                    continue
 
+                try:
+                    int(cells[6])
+                except:
+                    from pdb import set_trace; set_trace()
+                    
+                sentence.append(cells[1])
+                pos.append(cells[4])
+                head.append(int(cells[6]))
+                deprel.append(cells[7])
+            else:
+                count_word = False
+                sentences.append(sentence)
+                poses.append(pos)
+                heads.append(head)
+                deprels.append(deprel)
+        else:
+            continue
+    return pd.DataFrame(
+        {'sentence': sentences, 'pos': poses, 'head': heads, 'deprel': deprels}
+    )
+
+
+def unravel_sentence(sentence, head, deprel):
+    ''' Key function for unraveling a labeled sentence into transitions
+    '''
     true_graph = RelationGraph(len(sentence))
     true_graph.set_true_labels(head, deprel)
 
     stack = TwoStack()
-    word_list = [x + 1 for x in range(len(sentence))]
+    word_list = Buffer(len(sentence))
     graph = RelationGraph(len(sentence))
 
     train_states = []
@@ -37,7 +85,7 @@ def unravel_sentence(sentence, head, deprel):
     stack.add(0)
 
     while stack:
-        state = (copy.deepcopy(stack), copy.copy(word_list), copy.deepcopy(graph))
+        state = (copy.deepcopy(stack), copy.deepcopy(word_list), copy.deepcopy(graph))
 
         if len(stack) == 1:
             if len(word_list) > 0:

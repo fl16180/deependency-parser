@@ -1,4 +1,31 @@
 import numpy as np
+from collections import Counter
+
+
+class Vocab:
+    def __init__(self, min_freq=1):
+        self.min_freq = min_freq
+        
+    def build(self, sequences):
+        # build vocab from sequence
+        vocab = Counter([x for inst in sequences for x in inst])
+        vocab = {v: i for i, v in enumerate(
+            sorted([word for (word, val) in vocab.items() if val >= self.min_freq]))
+        }
+        self.vocab = vocab
+        n = len(vocab.keys())
+        # add unknown and padding tokens in
+        self.vocab['<UNK>'] = n
+        self.vocab['<PAD>'] = n + 1
+        return self
+        
+    def transform(self, sequence):
+        # use unknown token if word not in vocab
+        mapping = [self.vocab.get(x, self.vocab['<UNK>']) for x in sequence]
+        return mapping
+
+    def __len__(self):
+        return len(self.vocab)
 
 
 class TwoStack:
@@ -17,6 +44,11 @@ class TwoStack:
         if len(self.stack) <= 1:
             return None
         return self.stack[-2]
+
+    def view3(self):
+        if len(self.stack) <= 2:
+            return None
+        return self.stack[-3]
     
     def pop1(self):
         if len(self.stack) == 0:
@@ -38,6 +70,22 @@ class TwoStack:
         return self.stack.__str__()
 
 
+class Buffer:
+    def __init__(self, n):
+        self.array = [x + 1 for x in range(n)]
+
+    def get(self, i):
+        if len(self.array) < i + 1:
+            return None
+        return self.array[i]
+
+    def pop(self, i):
+        return self.array.pop(i)
+
+    def __len__(self):
+        return len(self.array)
+
+
 class RelationGraph:
     def __init__(self, n):
         self.mat = np.zeros((n + 1, n + 1))
@@ -46,9 +94,6 @@ class RelationGraph:
         self.true_graph = False
         
     def set_true_labels(self, head, deprel):
-        # this is temorary: eventually have a universal lookup
-        # from training set for consistency
-
         # lookup for deprel entry to matrix value
         self.dep_to_idx = {
             dep: i for i, dep in enumerate(set(deprel))
